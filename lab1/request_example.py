@@ -1,4 +1,4 @@
 import requests
-url = "https://www.example.com"
+url = "https://www.24tv.ua"
 response = requests.get(url)
 print(response.text)
