@@ -21,4 +21,3 @@ while x <= 0.9:
         print("x = " + x)
         print("resut = " + result)
     x = x + 0.05
-
