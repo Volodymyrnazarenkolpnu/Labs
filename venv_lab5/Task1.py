@@ -10,10 +10,9 @@ class Point():
     def __init__(self, x, y):
         self.x = x
         self.y = y
-    
-    def __eq__(self, other):
-        if self.x == other.x and self.y == other.y and (self.__name__ != other.__name__):
-            return True
+
+    def __eq__(self, other): 
+            return self.x == other.x and self.y == other.y
 
 class Polygon(Point):
     def __init__(self, *args):
@@ -59,6 +58,7 @@ p5 = Point(2, 4)
 p6 = Point(5, -8)
 p7 = Point(-3, -1)
 triangle = Polygon(p5, p6, p7)
+triangle2 = Polygon(p1, p6, p7)
 print(square.CalculateLongestDiagonal())
 
 def drawgraph(*args):
@@ -103,29 +103,23 @@ def drawgraph(*args):
     print(upper_numbers_second_line)
     #drawing points
     alphabet = ["a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z"]
+    drawn_points = []
+    statements = []
     for polyg in args:
-        letter = alphabet[rint(0, 24)]
+        letter = alphabet[rint(0, 23)]
         alphabet.remove(letter)
         for pt in polyg.points:
-            space[-(pt.x + 16)][-(pt.y + 15)] = (letter + " ")
+            for drpt in drawn_points:
+                if pt.__eq__(drpt):
+                    statements.append(f"{pt.x}, {pt.y} is a part of {space[pt.x + 15][-pt.y + 15]} and {letter}")
+            space[(pt.x + 15)][-(pt.y + 15)] = (letter + " ")
+            drawn_points.append(pt)
     #printer
     for i in range(0, 30):
         line = ""
         for j in range(0, 30):
             line += f"{space[j][i]}"
         print(line)
-drawgraph(square, triangle)
-"""
-space[0][0] = "0  "
-    space[0][1] = "1  " 
-    for i in range(1, 30):
-        space[i][0] = (str(i)[0] + " ")
-    for i in range(10, 20):
-        space[i][1] = (str(i)[1] + " ")
-    for i in range(20, 30):
-        space[i][1] = (str(i)[1] + " ")
-    for i in range(20, 30):
-        space[i][0] = (str(i)[0] + " ")
-    for i in range(2, 10):
-        space[0][i] = (str(i) + "  ")
-"""
+    for statement in statements:
+        print(statement)
+drawgraph(square, triangle, triangle2)
