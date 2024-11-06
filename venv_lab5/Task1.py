@@ -106,7 +106,7 @@ def drawgraph(*args):
     drawn_points = []
     statements = []
     for polyg in args:
-        letter = alphabet[rint(0, 23)]
+        letter = alphabet[rint(0, 22)]
         alphabet.remove(letter)
         for pt in polyg.points:
             for drpt in drawn_points:
@@ -122,4 +122,9 @@ def drawgraph(*args):
         print(line)
     for statement in statements:
         print(statement)
-drawgraph(square, triangle, triangle2)
+rpoints = []
+for i in range(6):
+    rpoints.append(Point(rint(-14, 14), rint(-14, 14)))
+rpolygon = Polygon()
+rpolygon.points = rpoints[:]
+drawgraph(square, triangle, triangle2, rpolygon)
