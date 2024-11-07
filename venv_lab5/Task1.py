@@ -58,7 +58,6 @@ p5 = Point(2, 4)
 p6 = Point(5, -8)
 p7 = Point(-3, -1)
 triangle = Polygon(p5, p6, p7)
-triangle2 = Polygon(p1, p6, p7)
 print(square.CalculateLongestDiagonal())
 
 def drawgraph(*args):
@@ -127,4 +126,4 @@ for i in range(6):
     rpoints.append(Point(rint(-14, 14), rint(-14, 14)))
 rpolygon = Polygon()
 rpolygon.points = rpoints[:]
-drawgraph(square, triangle, triangle2, rpolygon)
+drawgraph(square, triangle, rpolygon)
