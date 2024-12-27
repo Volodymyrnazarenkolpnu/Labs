@@ -1,4 +1,3 @@
-
 """
 main logic script
 """
@@ -28,6 +27,13 @@ class Player():
             _x += self.garden.sizex
         x = _x
         self.garden.field[y][x] = Plant(plant)
+    def check(self):
+        """
+        Check garden status as player
+        """
+        tick(self)
+        print(self.garden)
+
 
 class Garden():
     """
@@ -37,12 +43,23 @@ class Garden():
         self.field = []
         self.sizex = sizex
         self.sizey = sizey
-        self.last_tick = datetime.datetime(2024, 12, 26, 18, 18, 12)
+        self.last_tick = datetime.datetime(2024, 12, 27, 11, 18, 12)
         for _i in range(0, sizey):
             self.field.append([])
         for _i in range(0, sizey):
             for _j in range(0, sizex):
                 self.field[_i].append("")
+    def __str__(self):
+        for g in self.field:
+            line = "|"
+            for plt in g:
+                if plt != "":
+                    part = plt.__str__()
+                else:
+                    part = "Empty"
+                line += f"{part}|"
+            print(line)
+        return ""
 
 class Plant():
     """
@@ -72,31 +89,27 @@ class Plant():
             self.status = "Decayed"
 
 
-def tick():
+def tick(plr):
     """
     Tick
     """
-    for _i in range(0, plr.garden.sizey):
-        for _j in range(0, plr.garden.sizex):
-            if plr.garden.field[_i][_j] != "":
-                plr.garden.field[_i][_j].aging()
-                if plr.garden.field[_i][_j].age >= plr.garden.field[_i][_j].decay_age:
-                    plr.garden.field[_i][_j] = ""
-    plr.garden.last_tick = datetime.datetime.now()
+    if (datetime.datetime.now() - plr.garden.last_tick).total_seconds() > 3600:
+        _amount = math.floor((datetime.datetime.now() - plr.garden.last_tick).total_seconds() / 3600)
+        for _k in range(_amount):
+            for _i in range(0, plr.garden.sizey):
+                for _j in range(0, plr.garden.sizex):
+                    if plr.garden.field[_i][_j] != "":
+                        plr.garden.field[_i][_j].aging()
+                        if plr.garden.field[_i][_j].age >= plr.garden.field[_i][_j].decay_age:
+                            plr.garden.field[_i][_j] = ""
+            plr.garden.last_tick += datetime.timedelta(hours=1)
 
 player = Player("a")
 player.plant(1, 0)
-print(player.garden.field[0][0])
 print(player.garden.last_tick)
+print(player.garden)
 while True:
     inp = input()
-    
-    for plr in players:
-        if (datetime.datetime.now() - plr.garden.last_tick).total_seconds() > 3600:
-            _amount = math.floor((datetime.datetime.now() - plr.garden.last_tick).total_seconds() / 3600)
-            for i in range(0, _amount):
-                tick()
-                plr.garden.last_tick += datetime.timedelta(hours=1)
-        print(plr.garden.field[0][0])
+    player.check()
     if inp == "exit":
         exit()
