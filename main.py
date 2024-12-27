@@ -3,10 +3,12 @@ main logic script
 """
 import math
 import datetime
+from random import randint
 players = []
 decay_ages = {0: 6}
 maturation_ages = {0: 3}
 names = {0:"Blue Corn"}
+mutations = []
 class Player():
     """
     contains player
@@ -43,7 +45,7 @@ class Garden():
         self.field = []
         self.sizex = sizex
         self.sizey = sizey
-        self.last_tick = datetime.datetime(2024, 12, 27, 11, 18, 12)
+        self.last_tick = datetime.datetime(2024, 12, 27, 22, 18, 12)
         for _i in range(0, sizey):
             self.field.append([])
         for _i in range(0, sizey):
@@ -74,6 +76,7 @@ class Plant():
         self.decay_age = decay_ages.get(species)
         self.name = names.get(species)
         self.maturation_age = maturation_ages.get(species)
+        self.idnum = species
 
     def __str__(self):
         return f"{self.name}, {self.age}, {self.status}"
@@ -103,9 +106,75 @@ def tick(plr):
                         if plr.garden.field[_i][_j].age >= plr.garden.field[_i][_j].decay_age:
                             plr.garden.field[_i][_j] = ""
             plr.garden.last_tick += datetime.timedelta(hours=1)
+            mutate(plr.garden)
 
+def mutate(garden):
+    """
+    Checks each slot in a garden and applies mutations
+    """
+    possible_mutations = []
+    rownum = 0
+    for yrow in garden.field:
+        slotnum = 0
+        for slot in yrow:
+            nearby_plants = []
+            nearby_plants_amounts = []
+            if slot == "":
+                for sltlocal in range(9):
+                    if sltlocal != 5:
+                        y = math.ceil(sltlocal / 3) - 2
+                        _x = sltlocal % 3 - 2
+                        if _x == -2:
+                            _x += 3
+                        x = _x
+                        oy = rownum
+                        ox = slotnum
+                        ny = oy + y
+                        nx = ox + x
+                        if ny != -1 and nx !=1 and ny < len(garden.field) and nx < len(yrow):
+                            if garden.field[ny][nx] != "":
+                                if not nearby_plants.__contains__(garden.field[ny][nx].idnum):
+                                    nearby_plants.append(garden.field[ny][nx].idnum)
+                                    nearby_plants_amounts.append(1)
+                                else:
+                                    _idx = nearby_plants.index(garden.field[ny][nx].idnum)
+                                    nearby_plants_amounts[_idx] += 1
+            for mutation in mutations:
+                satisfies = True
+                for mutation_plant in mutation.plantlist:
+                    if nearby_plants.__contains__(mutation_plant):
+                        _index_mutation = mutation.plantlist.index(mutation_plant)
+                        _index_nearby = nearby_plants.index(mutation_plant)
+                        if mutation.plantquantity[_index_mutation] == nearby_plants_amounts[_index_nearby]:
+                            pass
+                        else:
+                            satisfies = False
+                    else:
+                        satisfies = False
+                if satisfies is True:
+                    possible_mutations.append(mutation)
+            for mutation in possible_mutations:
+                _rand = randint(0, 100)
+                if _rand < mutation.chance:
+                    garden.field[rownum][slotnum] = Plant(mutation.outcomeplant)
+            slotnum += 1
+        rownum += 1
+
+class Mutations():
+    """
+    For mutations, trying to make them work as objects
+    """
+    def __init__(self, plantlist, plantquantity, chance, outcomeplant):
+        self.plantlist = plantlist
+        self.plantquantity = plantquantity
+        self.chance = chance
+        self.outcomeplant = outcomeplant
+        mutations.append(self)
+
+bluecorn = Mutations([0],[2], 50, 0)
 player = Player("a")
 player.plant(1, 0)
+player.plant(4, 0)
 print(player.garden.last_tick)
 print(player.garden)
 while True:
