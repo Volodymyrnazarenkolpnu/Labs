@@ -117,10 +117,10 @@ def mutate(garden):
     for yrow in garden.field:
         slotnum = 0
         for slot in yrow:
-            nearby_plants = []
-            nearby_plants_amounts = []
             if slot == "":
-                for sltlocal in range(9):
+                nearby_plants = []
+                nearby_plants_amounts = []
+                for sltlocal in range(1, 9):
                     if sltlocal != 5:
                         y = math.ceil(sltlocal / 3) - 2
                         _x = sltlocal % 3 - 2
@@ -131,7 +131,7 @@ def mutate(garden):
                         ox = slotnum
                         ny = oy + y
                         nx = ox + x
-                        if ny != -1 and nx !=1 and ny < len(garden.field) and nx < len(yrow):
+                        if ny != -1 and nx != -1 and ny < len(garden.field) and nx < len(yrow):
                             if garden.field[ny][nx] != "":
                                 if not nearby_plants.__contains__(garden.field[ny][nx].idnum):
                                     nearby_plants.append(garden.field[ny][nx].idnum)
@@ -139,24 +139,24 @@ def mutate(garden):
                                 else:
                                     _idx = nearby_plants.index(garden.field[ny][nx].idnum)
                                     nearby_plants_amounts[_idx] += 1
-            for mutation in mutations:
-                satisfies = True
-                for mutation_plant in mutation.plantlist:
-                    if nearby_plants.__contains__(mutation_plant):
-                        _index_mutation = mutation.plantlist.index(mutation_plant)
-                        _index_nearby = nearby_plants.index(mutation_plant)
-                        if mutation.plantquantity[_index_mutation] == nearby_plants_amounts[_index_nearby]:
-                            pass
+                for mutation in mutations:
+                    satisfies = True
+                    for mutation_plant in mutation.plantlist:
+                        if nearby_plants.__contains__(mutation_plant):
+                            _index_mutation = mutation.plantlist.index(mutation_plant)
+                            _index_nearby = nearby_plants.index(mutation_plant)
+                            if mutation.plantquantity[_index_mutation] == nearby_plants_amounts[_index_nearby]:
+                                pass
+                            else:
+                                satisfies = False
                         else:
                             satisfies = False
-                    else:
-                        satisfies = False
-                if satisfies is True:
-                    possible_mutations.append(mutation)
-            for mutation in possible_mutations:
-                _rand = randint(0, 100)
-                if _rand < mutation.chance:
-                    garden.field[rownum][slotnum] = Plant(mutation.outcomeplant)
+                    if satisfies is True:
+                        possible_mutations.append(mutation)
+                for mutation in possible_mutations:
+                    _rand = randint(0, 100)
+                    if _rand < mutation.chance:
+                        garden.field[rownum][slotnum] = Plant(mutation.outcomeplant)
             slotnum += 1
         rownum += 1
 
