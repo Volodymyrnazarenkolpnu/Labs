@@ -5,9 +5,9 @@ import math
 import datetime
 from random import randint
 players = []
-decay_ages = {0: 6}
-maturation_ages = {0: 3}
-names = {0:"Blue Corn"}
+decay_ages = {0: 6, 1: 10}
+maturation_ages = {0: 3, 1:7}
+names = {0:"Blue Corn", 1:"Clockberry"}
 mutations = []
 class Player():
     """
@@ -33,7 +33,10 @@ class Player():
         """
         Check garden status as player
         """
-        tick(self)
+        if (datetime.datetime.now() - self.garden.last_tick).total_seconds() > 3600:
+            _amount = math.floor((datetime.datetime.now() - self.garden.last_tick).total_seconds() / 3600)
+            for _k in range(_amount):
+                tick(self)
         print(self.garden)
 
 
@@ -45,7 +48,7 @@ class Garden():
         self.field = []
         self.sizex = sizex
         self.sizey = sizey
-        self.last_tick = datetime.datetime(2024, 12, 27, 22, 18, 12)
+        self.last_tick = datetime.datetime(2024, 12, 28, 14, 18, 12)
         for _i in range(0, sizey):
             self.field.append([])
         for _i in range(0, sizey):
@@ -96,17 +99,14 @@ def tick(plr):
     """
     Tick
     """
-    if (datetime.datetime.now() - plr.garden.last_tick).total_seconds() > 3600:
-        _amount = math.floor((datetime.datetime.now() - plr.garden.last_tick).total_seconds() / 3600)
-        for _k in range(_amount):
-            for _i in range(0, plr.garden.sizey):
-                for _j in range(0, plr.garden.sizex):
-                    if plr.garden.field[_i][_j] != "":
-                        plr.garden.field[_i][_j].aging()
-                        if plr.garden.field[_i][_j].age >= plr.garden.field[_i][_j].decay_age:
-                            plr.garden.field[_i][_j] = ""
-            plr.garden.last_tick += datetime.timedelta(hours=1)
-            mutate(plr.garden)
+    for _i in range(0, plr.garden.sizey):
+        for _j in range(0, plr.garden.sizex):
+            if plr.garden.field[_i][_j] != "":
+                plr.garden.field[_i][_j].aging()
+                if plr.garden.field[_i][_j].age >= plr.garden.field[_i][_j].decay_age:
+                    plr.garden.field[_i][_j] = ""
+    plr.garden.last_tick += datetime.timedelta(hours=1)
+    mutate(plr.garden)
 
 def mutate(garden):
     """
@@ -132,7 +132,7 @@ def mutate(garden):
                         ny = oy + y
                         nx = ox + x
                         if ny != -1 and nx != -1 and ny < len(garden.field) and nx < len(yrow):
-                            if garden.field[ny][nx] != "":
+                            if garden.field[ny][nx] != "" and garden.field[ny][nx].status == "Mature":
                                 if not nearby_plants.__contains__(garden.field[ny][nx].idnum):
                                     nearby_plants.append(garden.field[ny][nx].idnum)
                                     nearby_plants_amounts.append(1)
@@ -145,7 +145,7 @@ def mutate(garden):
                         if nearby_plants.__contains__(mutation_plant):
                             _index_mutation = mutation.plantlist.index(mutation_plant)
                             _index_nearby = nearby_plants.index(mutation_plant)
-                            if mutation.plantquantity[_index_mutation] == nearby_plants_amounts[_index_nearby]:
+                            if mutation.plantquantity[_index_mutation] >= nearby_plants_amounts[_index_nearby]:
                                 pass
                             else:
                                 satisfies = False
@@ -171,7 +171,8 @@ class Mutations():
         self.outcomeplant = outcomeplant
         mutations.append(self)
 
-bluecorn = Mutations([0],[2], 50, 0)
+bluecorn = Mutations([0],[2], 10, 0)
+clockberry = Mutations([0],[2], 5, 1)
 player = Player("a")
 player.plant(1, 0)
 player.plant(4, 0)
@@ -182,3 +183,5 @@ while True:
     player.check()
     if inp == "exit":
         exit()
+    if inp == "tick":
+        tick(player)
