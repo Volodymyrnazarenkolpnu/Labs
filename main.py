@@ -5,10 +5,19 @@ import math
 import datetime
 from random import randint
 players = []
-decay_ages = {0: 6, 1: 10}
-maturation_ages = {0: 3, 1:7}
-names = {0:"Blue Corn", 1:"Clockberry"}
+plants =[]
 mutations = []
+class Properties():
+    """
+    Plant properties
+    """
+    def __init__(self, name, decay_age, maturation_age):
+        self.name = name
+        self.decay_age = decay_age
+        self.maturation_age = maturation_age
+        plants.append(self)
+BlueCorn = Properties("Blue Corn", 6, 3)
+Clockberry = Properties("Clockberry", 10, 7)
 class Player():
     """
     contains player
@@ -126,9 +135,9 @@ class Plant():
     decay_age = 2
     name = "Plant"
     def __init__(self, species):
-        self.__decay_age = decay_ages.get(species)
-        self.__name = names.get(species)
-        self.__maturation_age = maturation_ages.get(species)
+        self.__decay_age = plants[species].decay_age
+        self.__name = plants[species].name
+        self.__maturation_age = plants[species].maturation_age
         self.__idnum = species
 
     def __str__(self):
@@ -211,7 +220,6 @@ def mutate(garden):
     """
     Checks each slot in a garden and applies mutations
     """
-    #todo: find every one
     garden_field = garden.get_field()
     possible_mutations = []
     rownum = 0
