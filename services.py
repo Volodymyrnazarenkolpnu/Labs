@@ -5,7 +5,7 @@ import datetime
 import json
 import math
 from random import randint
-from db import create_new_plant, create_player_and_their_garden, delete_plant_by_id, get_garden_by_player_id, get_plant_by_id, get_plant_props_by_id, get_player_by_id, get_all_mutations, update_field, update_garden_last_tick, update_plant, update_player_name
+from db import create_new_plant, remove_garden_by_id, remove_player_by_id, create_player_and_their_garden, delete_plant_by_id, get_garden_by_player_id, get_plant_by_id, get_plant_props_by_id, get_player_by_id, get_all_mutations, update_field, update_garden_last_tick, update_plant, update_player_name
 from models import Garden, Mutations, Plant, Player, Properties
 
 class PlayerService:
@@ -14,16 +14,29 @@ class PlayerService:
     def get_player_or_create_db(player_id, name):
         ''''Get or create new player from db. Also it updates name if user exists'''
         player = get_player_by_id(player_id)
+        exist_status = True
         if player is None:
             create_player_and_their_garden(player_id, name, 2, 2)
             player = get_player_by_id(player_id)
+            exist_status = False
         name_from_player = player["username"]
         points = player["points"]
         unlocked_plants = json.loads(player["unlocked_plants"])
         garden = GardenService.get_garden_from_db(player_id)
         if name is not name_from_player:
             update_player_name(player_id, name)
-        return Player(player_id, name_from_player, points, unlocked_plants, garden)
+        return [Player(player_id, name_from_player, points, unlocked_plants, garden), exist_status]
+    @staticmethod
+    def remove_player_or_display_error(player_id):
+        """removes a player if it exists"""
+        player = get_player_by_id(player_id)
+        if player == None:
+            return False
+        else:
+            remove_player_by_id(player_id)
+            remove_garden_by_id(player_id)
+            return True
+
 class GardenService:
     '''Garden service'''
     @staticmethod
@@ -170,24 +183,36 @@ class PlantPropsService:
 class GameService:
     '''Game Service'''
     @staticmethod
-    def plant(player_id, slot, prop_id):
+    def plant(player_id, slot, prop_id, name):
         """
         plants something in the garden
         """
+        player = PlayerService.get_player_or_create_db(player_id, name)[0]
+        player_plantlist = player.get_unlocked_plants()
         garden = GardenService.get_garden_from_db(player_id)
         garden_field = garden.get_field()
         garden_sizey = garden.get_sizey()
         garden_sizex = garden.get_sizex()
+        try:
+            slot = int(slot)
+            prop_id = int(prop_id)
+        except ValueError:
+            return "not_int"
         y = math.ceil(slot / garden_sizey) - 1
         _x = slot % garden_sizex - 1
         if _x == -1:
             _x += garden_sizex
         x = _x
+        if x < 0 or x > garden_sizex or  y < 0 or y > garden_sizey:
+            return "wrong_slot"
+        if not player_plantlist.__contains__(prop_id):
+            return "not_available"
         if garden_field[y][x] == "":
             new_plant = PlantService.create_plant(prop_id)
             if new_plant is not None:
                 garden_field[y][x] = new_plant
             update_field(player_id, garden_field, garden_sizex, garden_sizey)
+            return True
         
     @staticmethod
     def check(user_id, player: Player):

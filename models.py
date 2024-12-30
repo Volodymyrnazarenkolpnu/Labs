@@ -5,25 +5,31 @@ class Properties():
     """
     Plant properties
     """
-    def __init__(self, name, decay_age, maturation_age):
+    def __init__(self, name, decay_age, maturation_age, points):
         self.__name = name
         self.__decay_age = decay_age
         self.__maturation_age = maturation_age
+        self.__points = points
     def get_name(self):
         """
         Name getter
         """
         return self.__name
-    def get_garden_obj(self):
+    def get_decay_age(self):
         """
         Decay age getter
         """
         return self.__decay_age
-    def get_points(self):
+    def get_maturation_age(self):
         """
         Maturation age getter
         """
         return self.__maturation_age
+    def get_points(self):
+        """
+        points getter
+        """
+        return self.__points
 
 class Player():
     """
@@ -34,7 +40,7 @@ class Player():
         self.__name = name
         self.__points = points
         self.__unlocked_plants = unlocked_plants
-        self.__garden = garden        
+        self.__garden = garden
     # def plant(self, player_id, slot, plant_id):
     #     """
     #     plants something in the garden
@@ -57,7 +63,7 @@ class Player():
     #     garden = Garden(user_id)
     #     garden_last_tick = self.get_garden_obj().get_last_tick()
     #     if (datetime.datetime.now() - garden_last_tick).total_seconds() > 3600:
-    #         _amount = math.floor((datetime.datetime.now() - garden_last_tick).total_seconds() / 3600)
+    #         _amount = math.floor((datetime.datetime.now()-garden_last_tick).total_seconds()/3600)
     #         for _k in range(_amount):
     #             tick(garden)
     #     print(garden)
@@ -101,6 +107,7 @@ class Garden():
         self.__sizey = sizey
         self.__last_tick = last_tick
     def __str__(self):
+        text = """ """
         for g in self.__field:
             line = "|"
             for plt in g:
@@ -109,8 +116,8 @@ class Garden():
                 else:
                     part = "Empty"
                 line += f"{part}|"
-            print(line)
-        return ""
+            text += line + "\n"
+        return text
     def get_field(self):
         """
         Field matrix getter

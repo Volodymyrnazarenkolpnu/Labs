@@ -34,7 +34,8 @@ def init():
     id INTEGER PRIMARY KEY AUTOINCREMENT,    
     decay_age INTEGER INT,    
     maturation_age INTEGER INT,   
-    name TEXT
+    name TEXT,
+    points INTEGER INT
     )
     ''')
     cursor.execute('''
@@ -65,13 +66,11 @@ def init():
     cursor.close()
     connection.close()
 #endregion
-
 DB_FILE = 'my_database.db'
 if not os.path.exists(DB_FILE):
     print("Database file not found. Initializing...")
     init()
 connection = sqlite3.connect(DB_FILE)
-
 
 #region PLAYERS
 def create_player_and_their_garden(user_id, username, sizex = 2, sizey = 2):
@@ -98,9 +97,23 @@ def get_player_by_id(user_id):
     cursor.execute('SELECT username, points, unlocked_plants FROM Players WHERE id = ?', (user_id,))
     user = cursor.fetchone()
     cursor.close()
-    if(user != None):
+    if(user is not None):
         return {"username": user[0], "points": user[1], "unlocked_plants": user[2]}
     return None
+def remove_player_by_id(user_id):
+    """removes a player from db"""
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM Players WHERE id = ?", (user_id,))
+    connection.commit()
+    cursor.close()
+    return True
+def remove_garden_by_id(garden_id):
+    """removes a garden from db"""
+    cursor = connection.cursor()
+    cursor.execute("DELETE FROM Gardens WHERE id = ?", (garden_id,))
+    connection.commit()
+    cursor.close()
+    return True
 #endregion
 
 #region GARDEN
