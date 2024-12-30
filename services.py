@@ -1,125 +1,205 @@
+'''
+Services of project. We used it when we need to interact with db, or do massive logic
+'''
 import datetime
 import json
 import math
 from random import randint
-from db import create_player_and_their_garden, find_garden_by_player_id, find_player_by_id, get_all_mutations, update_field, update_player_name
-from models import Garden, Mutations, Plant, Player
+from db import create_new_plant, create_player_and_their_garden, delete_plant_by_id, get_garden_by_player_id, get_plant_by_id, get_plant_props_by_id, get_player_by_id, get_all_mutations, update_field, update_garden_last_tick, update_plant, update_player_name
+from models import Garden, Mutations, Plant, Player, Properties
 
-#region Player
-def get_player_or_create_db(player_id, name):
-    player = find_player_by_id(player_id)
-    if player is None:    
-        create_player_and_their_garden(player_id, name, 2, 2)
-        player = find_player_by_id(player_id)           
-    name_from_player = player[0]            
-    points = player[1]
-    unlocked_plants = json.loads(player[2])
-    garden = get_garden_from_db(player_id)
-    if name is not name_from_player:
-        update_player_name(player_id, name)            
-    return Player(name_from_player, points, unlocked_plants, garden)
-    
- #endregion
-
-#region Garden
-def get_garden_from_db(player_id):
-    garden = find_garden_by_player_id(player_id)
-    if garden is not None:
-        field = json.loads(garden[0])
-        sizex = garden[1]
-        sizey = garden[2]
-        last_tick = datetime.datetime.strptime(garden[3], "%Y-%m-%d %H:%M:%S.%f")
-        return Garden(field, sizex, sizey, last_tick)
-    else: 
-        print("Garden not found!")
-        return None    
-def tick(garden):
-    """
-    Tick
-    """
-    garden_sizey = garden.get_sizey()
-    garden_sizex = garden.get_sizex()
-    garden_field = garden.get_field()
-    for _i in range(0, garden_sizey):
-        for _j in range(0, garden_sizex):
-            if garden_field[_i][_j] != "":
-                garden_field[_i][_j].aging()
-                if garden_field[_i][_j].get_age() >= garden_field[_i][_j].get_decay_age():
-                    garden_field[_i][_j] = ""
-    garden.set_last_tick(garden.get_last_tick() + datetime.timedelta(hours=1))
-    mutate(garden)
-    update_field(garden.get_field())  
-                
-def garden_update_field(field):
-    update_field(field)  
-def mutate(garden):
-    """
-    Checks each slot in a garden and applies mutations
-    """
-    garden_field = garden.get_field()
-    possible_mutations = []
-    rownum = 0
-    for yrow in garden_field:
-        slotnum = 0
-        for slot in yrow:
-            if slot == "":
-                nearby_plants = []
-                nearby_plants_amounts = []
-                for sltlocal in range(1, 9):
-                    if sltlocal != 5:
-                        y = math.ceil(sltlocal / 3) - 2
-                        _x = sltlocal % 3 - 2
-                        if _x == -2:
-                           _x += 3
-                        x = _x
-                        oy = rownum
-                        ox = slotnum
-                        ny = oy + y
-                        nx = ox + x
-                        if ny != -1 and nx != -1 and ny < len(garden_field) and nx < len(yrow):
-                            if garden_field[ny][nx] != "" and garden_field[ny][nx].get_status() == "Mature":
-                                _plant_idnum = garden_field[ny][nx].get_idnum()
-                                if not nearby_plants.__contains__(_plant_idnum):
-                                    nearby_plants.append(_plant_idnum)
-                                    nearby_plants_amounts.append(1)
+class PlayerService:
+    '''Player service'''
+    @staticmethod
+    def get_player_or_create_db(player_id, name):
+        ''''Get or create new player from db. Also it updates name if user exists'''
+        player = get_player_by_id(player_id)
+        if player is None:
+            create_player_and_their_garden(player_id, name, 2, 2)
+            player = get_player_by_id(player_id)
+        name_from_player = player["username"]
+        points = player["points"]
+        unlocked_plants = json.loads(player["unlocked_plants"])
+        garden = GardenService.get_garden_from_db(player_id)
+        if name is not name_from_player:
+            update_player_name(player_id, name)
+        return Player(player_id, name_from_player, points, unlocked_plants, garden)
+class GardenService:
+    '''Garden service'''
+    @staticmethod
+    def get_garden_from_db(player_id):
+        '''Get garden from db. Raises eeror if that not found'''        
+        garden = get_garden_by_player_id(player_id)
+        if garden is not None:
+            field = json.loads(garden["field"])[:]
+            sizex = garden["sizex"]
+            sizey = garden["sizey"]
+            last_tick = datetime.datetime.strptime(garden["last_tick"], "%Y-%m-%d %H:%M:%S.%f")            
+            for _i in range(0, sizey): #init field (get real plants from db)
+                for _j in range(0, sizex):
+                    field[_i][_j] = PlantService.get_plant_by_id(field[_i][_j])
+            return Garden(field, sizex, sizey, last_tick)
+        raise ValueError("Garden that you tryied to get not exists")
+    @staticmethod
+    def tick(user_id, garden: Garden):
+        """
+        Tick
+        """
+        garden_sizey = garden.get_sizey()
+        garden_sizex = garden.get_sizex()
+        garden_field = garden.get_field()
+        for _i in range(0, garden_sizey):
+            for _j in range(0, garden_sizex):
+                if garden_field[_i][_j] != "":
+                    garden_field[_i][_j].aging()
+                    if garden_field[_i][_j].get_age() >= garden_field[_i][_j].get_decay_age():
+                        delete_plant_by_id(garden_field[_i][_j].get_id())
+                        garden_field[_i][_j] = ""
+                    else:
+                        update_plant(garden_field[_i][_j].get_id(),
+                                     garden_field[_i][_j].get_age(),
+                                     garden_field[_i][_j].get_status())
+        GardenService.mutate(garden)
+        update_garden_last_tick(user_id, f"{garden.get_last_tick() + datetime.timedelta(hours=1)}")
+        garden.set_last_tick(garden.get_last_tick() + datetime.timedelta(hours=1))
+        update_field(user_id, garden.get_field(), garden.get_sizex(), garden.get_sizey())
+    @staticmethod
+    def mutate(garden):
+        """
+        Checks each slot in a garden and applies mutations
+        """
+        garden_field = garden.get_field()
+        possible_mutations = []
+        rownum = 0
+        for yrow in garden_field:
+            slotnum = 0
+            for slot in yrow:
+                if slot == "":
+                    nearby_plants = []
+                    nearby_plants_amounts = []
+                    for sltlocal in range(1, 9):
+                        if sltlocal != 5:
+                            y = math.ceil(sltlocal / 3) - 2
+                            _x = sltlocal % 3 - 2
+                            if _x == -2:
+                                _x += 3
+                            x = _x
+                            oy = rownum
+                            ox = slotnum
+                            ny = oy + y
+                            nx = ox + x
+                            if ny != -1 and nx != -1 and ny < len(garden_field) and nx < len(yrow):
+                                if garden_field[ny][nx] != "" and garden_field[ny][nx].get_status() == "Mature":
+                                    _plant_idnum = garden_field[ny][nx].get_prop_id()
+                                    if not nearby_plants.__contains__(_plant_idnum):
+                                        nearby_plants.append(_plant_idnum)
+                                        nearby_plants_amounts.append(1)
+                                    else:
+                                        _idx = nearby_plants.index(_plant_idnum)
+                                        nearby_plants_amounts[_idx] += 1
+                    for mutation in MutationsService.get_all_mutations_as_model_array():
+                        satisfies = True
+                        for mutation_plant in mutation.get_plant_list():
+                            mutation_plantlist = mutation.get_plant_list()
+                            mutation_plant_quantity = mutation.get_plant_quantity()
+                            if nearby_plants.__contains__(mutation_plant):
+                                _index_mutation = mutation_plantlist.index(mutation_plant)
+                                _index_nearby = nearby_plants.index(mutation_plant)
+                                if nearby_plants_amounts[_index_nearby] >= mutation_plant_quantity[_index_mutation]:
+                                    pass
                                 else:
-                                    _idx = nearby_plants.index(_plant_idnum)
-                                    nearby_plants_amounts[_idx] += 1
-                for mutation in MutationsMethods.get_all_mutations_as_model_array():
-                    satisfies = True
-                    for mutation_plant in mutation.get_plant_list():
-                        mutation_plantlist = mutation.get_plant_list()
-                        mutation_plant_quantity = mutation.get_plant_quantity()
-                        if nearby_plants.__contains__(mutation_plant):
-                            _index_mutation = mutation_plantlist.index(mutation_plant)
-                            _index_nearby = nearby_plants.index(mutation_plant)
-                            if nearby_plants_amounts[_index_nearby] >= mutation_plant_quantity[_index_mutation]:
-                                pass
+                                    satisfies = False
                             else:
                                 satisfies = False
-                        else:
-                            satisfies = False
-                    if satisfies is True:
-                        possible_mutations.append(mutation)
-                for mutation in possible_mutations:
-                    _rand = randint(0, 100)
-                    if _rand < mutation.chance:
-                        garden_field[rownum][slotnum] = Plant(mutation.get_outcome_plant())
-            slotnum += 1
-        rownum += 1
+                        if satisfies is True:
+                            possible_mutations.append(mutation)
+                    for mutation in possible_mutations:
+                        _rand = randint(0, 100)
+                        if _rand < mutation.get_chance():
+                            garden_field[rownum][slotnum] = PlantService.create_plant(mutation.get_outcome_plant())
+                slotnum += 1
+            rownum += 1
 
-#endregion
+class MutationsService:
+    '''Mutation Service'''
+    @staticmethod
+    def get_all_mutations_as_model_array():
+        '''Get all mutations from db and parse it to Mutations array'''
+        raw_mutations = get_all_mutations()
+        mutations = []
+        for raw_mutation in raw_mutations:
+            plantlist = json.loads(raw_mutation[0])
+            plantquantity = json.loads(raw_mutation[1])
+            chance = raw_mutation[2]
+            outcomeplant_id = raw_mutation[3]
+            mutations.append(Mutations(plantlist, plantquantity, chance, outcomeplant_id))
+        return mutations
 
-#region mutations
-def get_all_mutations_as_model_array():            
-    raw_mutations = get_all_mutations()        
-    mutations = []
-  
-    for raw_mutation in raw_mutations:
-        plantlist = json.loads(raw_mutation[0])
-        plantquantity = json.loads(raw_mutation[1])
-        chance = raw_mutation[2]
-        outcomeplant_id = raw_mutation[3]    
-        mutations.append(Mutations(plantlist, plantquantity, chance, outcomeplant_id))
-    return mutations
-#endregion
+class PlantService:
+    '''Plant service'''
+    @staticmethod
+    def get_plant_by_id(plant_id):
+        '''Need to find a PlantsProps by id'''          
+        raw_plant = get_plant_by_id(plant_id)
+        if raw_plant is not None:
+            return Plant(raw_plant["id"], raw_plant["decay_age"], raw_plant["name"], raw_plant["maturation_age"], raw_plant["prop_id"], raw_plant["age"], raw_plant["status"])
+        else:
+            return ""
+    @staticmethod
+    def create_plant(propsid):
+        '''Need to create a Plant by propid(foreignkey)'''          
+        raw_plant = create_new_plant(propsid)
+        if raw_plant is not None:
+            return Plant(raw_plant["id"], raw_plant["decay_age"], raw_plant["name"], raw_plant["maturation_age"], raw_plant["prop_id"], raw_plant["age"], raw_plant["status"])
+        else:
+            return None
+
+
+
+class PlantPropsService:
+    '''Plant prop Service'''
+    @staticmethod
+    def get_plant_props_by_id(propsid):
+        '''Need to find a Plants by id'''          
+        raw_plant = get_plant_props_by_id(propsid)
+        return Properties(raw_plant["name"], raw_plant["decay_age"], raw_plant["maturation_age"])
+
+
+
+
+class GameService:
+    '''Game Service'''
+    @staticmethod
+    def plant(player_id, slot, prop_id):
+        """
+        plants something in the garden
+        """
+        garden = GardenService.get_garden_from_db(player_id)
+        garden_field = garden.get_field()
+        garden_sizey = garden.get_sizey()
+        garden_sizex = garden.get_sizex()
+        y = math.ceil(slot / garden_sizey) - 1
+        _x = slot % garden_sizex - 1
+        if _x == -1:
+            _x += garden_sizex
+        x = _x
+        if garden_field[y][x] == "":
+            new_plant = PlantService.create_plant(prop_id)
+            if new_plant is not None:
+                garden_field[y][x] = new_plant
+            update_field(player_id, garden_field, garden_sizex, garden_sizey)
+        
+    @staticmethod
+    def check(user_id, player: Player):
+        """
+        Check garden status as player
+        """
+        garden = player.get_garden_obj()
+        garden_last_tick = player.get_garden_obj().get_last_tick()
+        total_time = (datetime.datetime.now() - garden_last_tick).total_seconds()
+        if total_time > 3600:
+            _amount = math.floor((datetime.datetime.now() - garden_last_tick).total_seconds() / 3600)
+            for _k in range(_amount):
+                GardenService.tick(user_id, garden)
+        print(garden)
+    

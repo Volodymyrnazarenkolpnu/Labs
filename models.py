@@ -1,6 +1,4 @@
-import datetime
-import math
-
+''''Models'''
 #from services import garden_update_field, get_garden_from_db, tick
 
 class Properties():
@@ -8,21 +6,35 @@ class Properties():
     Plant properties
     """
     def __init__(self, name, decay_age, maturation_age):
-        self.name = name
-        self.decay_age = decay_age
-        self.maturation_age = maturation_age        
-#BlueCorn = Properties("Blue Corn", 6, 3)
-#Clockberry = Properties("Clockberry", 10, 7)
+        self.__name = name
+        self.__decay_age = decay_age
+        self.__maturation_age = maturation_age
+    def get_name(self):
+        """
+        Name getter
+        """
+        return self.__name
+    def get_garden_obj(self):
+        """
+        Decay age getter
+        """
+        return self.__decay_age
+    def get_points(self):
+        """
+        Maturation age getter
+        """
+        return self.__maturation_age
+
 class Player():
     """
     contains player
     """
-    def __init__(self, name, points, unlocked_plants, garden):        
+    def __init__(self, player_id, name, points, unlocked_plants, garden):
+        self.__player_id = player_id
         self.__name = name
         self.__points = points
         self.__unlocked_plants = unlocked_plants
-        self.__garden = garden
-        
+        self.__garden = garden        
     # def plant(self, player_id, slot, plant_id):
     #     """
     #     plants something in the garden
@@ -37,7 +49,7 @@ class Player():
     #         _x += garden_sizex
     #     x = _x
     #     garden_field[y][x] = plant_id
-    #     garden_update_field(player_id, garden_field)   
+    #     garden_update_field(player_id, garden_field)
     # def check(self, user_id):
     #     """
     #     Check garden status as player
@@ -49,6 +61,16 @@ class Player():
     #         for _k in range(_amount):
     #             tick(garden)
     #     print(garden)
+    def set_garden(self, garden):
+        """
+        garden setter
+        """
+        self.__garden = garden
+    def get_player_id(self):
+        """
+        Id getter
+        """
+        return self.__player_id
     def get_name(self):
         """
         Name getter
@@ -69,18 +91,15 @@ class Player():
         Unlocked plants list getter
         """
         return self.__unlocked_plants
-
-
 class Garden():
     """
     Garden of individual player
     """
-    def __init__(self, field, sizex, sizey, last_tick):        
+    def __init__(self, field, sizex, sizey, last_tick):
         self.__field = field
         self.__sizex = sizex
         self.__sizey = sizey
         self.__last_tick = last_tick
-        
     def __str__(self):
         for g in self.__field:
             line = "|"
@@ -127,10 +146,14 @@ class Plant():
     maturation_age = 1
     decay_age = 2
     name = "Plant"
-    def __init__(self, decay_age, name, maturation_age):
+    def __init__(self, plant_id, decay_age, name, maturation_age, prop_id, age=0, status="Growing"):
+        self.__plant_id = plant_id
         self.__decay_age = decay_age
         self.__name = name
         self.__maturation_age = maturation_age
+        self.__prop_id = prop_id
+        self.age = age
+        self.status = status
         # self.__idnum = species
         # self.__decay_age = plants[species].decay_age
         # self.__name = plants[species].name
@@ -138,7 +161,7 @@ class Plant():
         # self.__idnum = species
 
     def __str__(self):
-        return f"{self.name}, {self.age}, {self.status}"
+        return f"{self.__plant_id} {self.__name}, {self.age}, {self.status}"
 
     def aging(self):
         """
@@ -154,10 +177,19 @@ class Plant():
             self.set_status("Mature")
         if self_age >= self_decay_age:
             self.set_status("Decayed")
-
+    def get_id(self):
+        """
+        id getter
+        """
+        return self.__plant_id
+    def get_prop_id (self):
+        """
+        prop_id getter
+        """
+        return self.__prop_id
     def get_decay_age(self):
         """
-        Decay agegetter
+        Decay age getter
         """
         return self.__decay_age
     def get_name(self):
@@ -170,11 +202,11 @@ class Plant():
         Maturaton age getter
         """
         return self.__maturation_age
-    def get_idnum(self):
-        """
-        idnum getter
-        """
-        return self.__idnum
+    # def get_idnum(self):
+    #     """
+    #     idnum getter
+    #     """
+    #     return self.__idnum
     def get_age(self):
         """
         Plant age getter
