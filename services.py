@@ -5,7 +5,7 @@ import datetime
 import json
 import math
 from random import randint
-from db import create_new_plant, remove_garden_by_id, remove_player_by_id, create_player_and_their_garden, delete_plant_by_id, get_garden_by_player_id, get_plant_by_id, get_plant_props_by_id, get_player_by_id, get_all_mutations, update_field, update_garden_last_tick, update_plant, update_player_name
+from db import create_new_plant, add_points_to_player, remove_garden_by_id, remove_player_by_id, create_player_and_their_garden, delete_plant_by_id, get_garden_by_player_id, get_plant_by_id, get_plant_props_by_id, get_player_by_id, get_all_mutations, update_field, update_garden_last_tick, update_plant, update_player_name
 from models import Garden, Mutations, Plant, Player, Properties
 
 class PlayerService:
@@ -175,7 +175,7 @@ class PlantPropsService:
     def get_plant_props_by_id(propsid):
         '''Need to find a Plants by id'''          
         raw_plant = get_plant_props_by_id(propsid)
-        return Properties(raw_plant["name"], raw_plant["decay_age"], raw_plant["maturation_age"])
+        return Properties(raw_plant["name"], raw_plant["decay_age"], raw_plant["maturation_age"], raw_plant["points"])
 
 
 
@@ -203,7 +203,7 @@ class GameService:
         if _x == -1:
             _x += garden_sizex
         x = _x
-        if x < 0 or x > garden_sizex or  y < 0 or y > garden_sizey:
+        if x < 0 or x >= garden_sizex or  y < 0 or y >= garden_sizey:
             return "wrong_slot"
         if not player_plantlist.__contains__(prop_id):
             return "not_available"
@@ -213,6 +213,8 @@ class GameService:
                 garden_field[y][x] = new_plant
             update_field(player_id, garden_field, garden_sizex, garden_sizey)
             return True
+        else:
+            return "occupied"
         
     @staticmethod
     def check(user_id, player: Player):
@@ -226,5 +228,39 @@ class GameService:
             _amount = math.floor((datetime.datetime.now() - garden_last_tick).total_seconds() / 3600)
             for _k in range(_amount):
                 GardenService.tick(user_id, garden)
-        print(garden)
+        return garden
+
+    @staticmethod
+    def uproot(player_id, player, slot):
+        """collect/uproot a plant"""
+        try:
+            slot = int(slot)
+        except ValueError:
+            return "not_int"
+        garden = GardenService.get_garden_from_db(player_id)
+        garden_field = garden.get_field()
+        garden_sizey = garden.get_sizey()
+        garden_sizex = garden.get_sizex()
+        y = math.ceil(slot / garden_sizey) - 1
+        _x = slot % garden_sizex - 1
+        if _x == -1:
+            _x += garden_sizex
+        x = _x
+        if x < 0 or x >= garden_sizex or  y < 0 or y >= garden_sizey:
+            return "wrong_slot"
+        if garden_field[y][x] == "":
+            return "slot_empty"
+        else:
+            plant_id = garden_field[y][x].get_id()
+            prop_id = garden_field[y][x].get_prop_id()
+            points = get_plant_props_by_id(prop_id)["points"]
+            plant_status = garden_field[y][x].get_status()
+            if plant_status == "Mature":
+                add_points_to_player(player_id, points)
+            plant_name= garden_field[y][x].get_name()
+            delete_plant_by_id(plant_id)
+            garden_field[y][x] = ""
+            update_field(player_id, garden_field, garden_sizex, garden_sizey)
+            return (plant_name, plant_status, points)
+
     

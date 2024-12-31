@@ -114,6 +114,15 @@ def remove_garden_by_id(garden_id):
     connection.commit()
     cursor.close()
     return True
+def add_points_to_player(user_id, new_points):
+    """gives a player points"""
+    cursor = connection.cursor()
+    cursor.execute("SELECT points FROM Players WHERE id = ?", (user_id,))
+    points = cursor.fetchone()[0]
+    points += new_points
+    cursor.execute("UPDATE Players SET points = ? WHERE id = ?", (points, user_id))
+    connection.commit()
+    cursor.close()
 #endregion
 
 #region GARDEN
@@ -194,10 +203,10 @@ def delete_plant_by_id(plantid):
 def get_plant_props_by_id(propsid):
     '''Need to find a PlantsProps by id'''
     cursor = connection.cursor()
-    cursor.execute('SELECT name, decay_age, maturation_age FROM PlantsProps WHERE id = ?', (propsid,))
+    cursor.execute('SELECT name, decay_age, maturation_age, points FROM PlantsProps WHERE id = ?', (propsid,))
     plant = cursor.fetchone()
     cursor.close()
-    return {"name": plant[0], "decay_age": plant[1], "maturation_age": plant[2]}
+    return {"name": plant[0], "decay_age": plant[1], "maturation_age": plant[2], "points": plant[3]}
 #endregion
 
 

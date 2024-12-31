@@ -11,18 +11,8 @@ KEY = "7548885562:AAGyYJ87KaiZY7LAbm_uu9_u7NFLqnqRmXw"
 # mutations = []
 # bluecorn = Mutations([0],[2], 10, 0)
 # clockberry = Mutations([0],[2], 5, 1)
-def devloop():
-    while True:
-        inp = input()
-        #GameService.check(player_id, player)
-        if inp == "exit":
-            exit()
-        if inp == "tick":
-            pass
         #    GardenService.tick(player_id, player.get_garden_obj())
         #GameService.check(player_id, player)
-devthread = threading.Thread(target=devloop)
-devthread.start()
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
@@ -34,13 +24,11 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     
     if exist_status is False:
         await update.message.reply_html(
-            rf"Hi {user.mention_html()}! Your account was created!",
-            reply_markup=ForceReply(selective=True),
+            rf"Hi {user.mention_html()}! Your account was created!"
         )
     else:
         await update.message.reply_html(
-            rf"Hi {user.mention_html()}!You already have an account!",
-            reply_markup=ForceReply(selective=True),
+            rf"Hi {user.mention_html()}!You already have an account!"
         )
 
 async def check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -49,7 +37,7 @@ async def check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     user_id = user.id
     user_name = user.full_name
     player = PlayerService.get_player_or_create_db(user_id, user_name)[0]
-    txt = player.get_garden_obj().__str__()
+    txt = GameService.check(user_id, player).__str__()
     await update.message.reply_text(txt)
 
 async def quit(update : Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -75,14 +63,38 @@ async def plant(update : Update, context: ContextTypes.DEFAULT_TYPE):
         status = GameService.plant(user_id, slot, plant_id, user_name)
         if status is True:
             plant_name = PlantPropsService.get_plant_props_by_id(plant_id).get_name()
-            await update.message.reply_text(f"Succesfully planted {plant_name} in slot #{slot}")
+            await update.message.reply_text(f"Successfully planted {plant_name} in slot #{slot}")
+        elif status == "occupied":
+            await update.message.reply_text("Given slot is already occupied by another plant")
         elif status == "wrong_slot":
             await update.message.reply_text("Given slot is outside of your garden")
         elif status == "not_available":
             await update.message.reply_text("You don't yet have that plant")
         elif status == "not_int":
             await update.message.reply_text("Both slot number and plant id must be integer")
-        
+
+async def collect(update : Update, context: ContextTypes.DEFAULT_TYPE):
+    """collect/uproot a plant in the garden of the user"""
+    user = update.effective_user
+    user_id = user.id
+    user_name = user.full_name
+    player = PlayerService.get_player_or_create_db(user_id, user_name)
+    if not context.args:
+        await update.message.reply_text("Not enough positional arguments given")
+    else:
+        status = GameService.uproot(user_id, player, context.args[0])
+        if status == "not_int":
+            await update.message.reply_text("Slot number should be integer")
+        elif status == "wrong_slot":
+            await update.message.reply_text("Given slot is outside of your garden")
+        elif status == "slot_empty":
+            await update.message.reply_text("This slot doesn't have any plants")
+        else:
+            print(status[1])
+            if status[1] == "Mature":
+                await update.message.reply_text(f"{status[0]} in slot {context.args[0]} collected successfully! Gained {status[2]} points")
+            else:
+                await update.message.reply_text(f"{status[0]} in slot {context.args[0]} collected successfully!")
 
 
 # GameService.plant(player_id, 1, 1)
@@ -93,7 +105,8 @@ application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("check", check))
 application.add_handler(CommandHandler("quit", quit))
 application.add_handler(CommandHandler("plant", plant))
-application.run_polling(allowed_updates=Update.ALL_TYPES)
+application.add_handler(CommandHandler("collect", collect))
+application.run_polling(allowed_updates=Update.MESSAGE)
 
 # print(player.get_garden_obj())
 # GameService.plant(player_id, 1, 1)
