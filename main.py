@@ -1,10 +1,9 @@
 """
 main logic script
 """
-import threading
-from telegram import Update, ForceReply
-from telegram.ext import Updater, Application, CommandHandler, ContextTypes
-from services import GameService, GardenService, PlayerService, PlantPropsService
+from telegram import Update
+from telegram.ext import Application, CommandHandler, ContextTypes
+from services import GameService, PlayerService, PlantPropsService
 KEY = "7548885562:AAGyYJ87KaiZY7LAbm_uu9_u7NFLqnqRmXw"
 
 # plants =[]
@@ -13,15 +12,14 @@ KEY = "7548885562:AAGyYJ87KaiZY7LAbm_uu9_u7NFLqnqRmXw"
 # clockberry = Mutations([0],[2], 5, 1)
         #    GardenService.tick(player_id, player.get_garden_obj())
         #GameService.check(player_id, player)
-async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def start(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
     user_id = user.id
     user_fullname = user.full_name
     player_and_status = PlayerService.get_player_or_create_db(user_id, user_fullname)
-    player_obj = player_and_status[0]
     exist_status = player_and_status[1]
-    
+
     if exist_status is False:
         await update.message.reply_html(
             rf"Hi {user.mention_html()}! Your account was created!"
@@ -31,24 +29,26 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
             rf"Hi {user.mention_html()}!You already have an account!"
         )
 
-async def check(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def check(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /check is issued."""
     user = update.effective_user
     user_id = user.id
     user_name = user.full_name
     player = PlayerService.get_player_or_create_db(user_id, user_name)[0]
-    txt = GameService.check(user_id, player).__str__()
+    txt = str(GameService.check(user_id, player))
     await update.message.reply_text(txt)
 
-async def quit(update : Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def quit_game(update : Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     """remove a user with a command"""
     user= update.effective_user
     user_id = user.id
     status = PlayerService.remove_player_or_display_error(user_id)
     if status is True:
-        await update.message.reply_html(f"{user.mention_html()}, your account was deleted succesfully!")
+        await update.message.reply_html(f"""{user.mention_html()},
+        your account was deleted succesfully!""")
     else:
-        await update.message.reply_html(f"{user.mention_html()}, it doesn't look like you have an account")
+        await update.message.reply_html(f"""{user.mention_html()},
+        it doesn't look like you have an account""")
 
 async def plant(update : Update, context: ContextTypes.DEFAULT_TYPE):
     """plants something in the garden of the user"""
@@ -77,12 +77,10 @@ async def collect(update : Update, context: ContextTypes.DEFAULT_TYPE):
     """collect/uproot a plant in the garden of the user"""
     user = update.effective_user
     user_id = user.id
-    user_name = user.full_name
-    player = PlayerService.get_player_or_create_db(user_id, user_name)
     if not context.args:
         await update.message.reply_text("Not enough positional arguments given")
     else:
-        status = GameService.uproot(user_id, player, context.args[0])
+        status = GameService.uproot(user_id, context.args[0])
         if status == "not_int":
             await update.message.reply_text("Slot number should be integer")
         elif status == "wrong_slot":
@@ -92,9 +90,11 @@ async def collect(update : Update, context: ContextTypes.DEFAULT_TYPE):
         else:
             print(status[1])
             if status[1] == "Mature":
-                await update.message.reply_text(f"{status[0]} in slot {context.args[0]} collected successfully! Gained {status[2]} points")
+                await update.message.reply_text(f"""{status[0]} in slot {context.args[0]}
+                 collected successfully! Gained {status[2]} points""")
             else:
-                await update.message.reply_text(f"{status[0]} in slot {context.args[0]} collected successfully!")
+                await update.message.reply_text(f"""{status[0]} in slot {context.args[0]}
+                 collected successfully!""")
 
 
 # GameService.plant(player_id, 1, 1)
@@ -103,7 +103,7 @@ async def collect(update : Update, context: ContextTypes.DEFAULT_TYPE):
 application = Application.builder().token(KEY).build()
 application.add_handler(CommandHandler("start", start))
 application.add_handler(CommandHandler("check", check))
-application.add_handler(CommandHandler("quit", quit))
+application.add_handler(CommandHandler("quit_game", quit_game))
 application.add_handler(CommandHandler("plant", plant))
 application.add_handler(CommandHandler("collect", collect))
 application.run_polling(allowed_updates=Update.MESSAGE)

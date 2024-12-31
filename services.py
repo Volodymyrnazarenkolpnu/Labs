@@ -5,7 +5,11 @@ import datetime
 import json
 import math
 from random import randint
-from db import create_new_plant, add_points_to_player, remove_garden_by_id, remove_player_by_id, create_player_and_their_garden, delete_plant_by_id, get_garden_by_player_id, get_plant_by_id, get_plant_props_by_id, get_player_by_id, get_all_mutations, update_field, update_garden_last_tick, update_plant, update_player_name
+from db import (create_new_plant, add_points_to_player, remove_garden_by_id,
+remove_player_by_id, create_player_and_their_garden,
+delete_plant_by_id, get_garden_by_player_id, get_plant_by_id,
+get_plant_props_by_id, get_player_by_id, get_all_mutations,
+update_field, update_garden_last_tick, update_plant, update_player_name)
 from models import Garden, Mutations, Plant, Player, Properties
 
 class PlayerService:
@@ -30,7 +34,7 @@ class PlayerService:
     def remove_player_or_display_error(player_id):
         """removes a player if it exists"""
         player = get_player_by_id(player_id)
-        if player == None:
+        if player is None:
             return False
         else:
             remove_player_by_id(player_id)
@@ -47,7 +51,7 @@ class GardenService:
             field = json.loads(garden["field"])[:]
             sizex = garden["sizex"]
             sizey = garden["sizey"]
-            last_tick = datetime.datetime.strptime(garden["last_tick"], "%Y-%m-%d %H:%M:%S.%f")            
+            last_tick = datetime.datetime.strptime(garden["last_tick"], "%Y-%m-%d %H:%M:%S.%f")
             for _i in range(0, sizey): #init field (get real plants from db)
                 for _j in range(0, sizex):
                     field[_i][_j] = PlantService.get_plant_by_id(field[_i][_j])
@@ -102,9 +106,10 @@ class GardenService:
                             ny = oy + y
                             nx = ox + x
                             if ny != -1 and nx != -1 and ny < len(garden_field) and nx < len(yrow):
-                                if garden_field[ny][nx] != "" and garden_field[ny][nx].get_status() == "Mature":
-                                    _plant_idnum = garden_field[ny][nx].get_prop_id()
-                                    if not nearby_plants.__contains__(_plant_idnum):
+                                newslot = garden_field[ny][nx]
+                                if newslot != "" and newslot.get_status() == "Mature":
+                                    _plant_idnum = newslot.get_prop_id()
+                                    if not _plant_idnum is nearby_plants:
                                         nearby_plants.append(_plant_idnum)
                                         nearby_plants_amounts.append(1)
                                     else:
@@ -115,7 +120,7 @@ class GardenService:
                         for mutation_plant in mutation.get_plant_list():
                             mutation_plantlist = mutation.get_plant_list()
                             mutation_plant_quantity = mutation.get_plant_quantity()
-                            if nearby_plants.__contains__(mutation_plant):
+                            if mutation_plant in nearby_plants:
                                 _index_mutation = mutation_plantlist.index(mutation_plant)
                                 _index_nearby = nearby_plants.index(mutation_plant)
                                 if nearby_plants_amounts[_index_nearby] >= mutation_plant_quantity[_index_mutation]:
@@ -231,7 +236,7 @@ class GameService:
         return garden
 
     @staticmethod
-    def uproot(player_id, player, slot):
+    def uproot(player_id, slot):
         """collect/uproot a plant"""
         try:
             slot = int(slot)
@@ -262,5 +267,3 @@ class GameService:
             garden_field[y][x] = ""
             update_field(player_id, garden_field, garden_sizex, garden_sizey)
             return (plant_name, plant_status, points)
-
-    

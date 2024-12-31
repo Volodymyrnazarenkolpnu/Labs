@@ -1,5 +1,5 @@
 """DEV"""
-from services import GameService, GardenService, PlayerService, PlantPropsService
+from services import GardenService, PlayerService
 def devloop():
     """DEVLOOP"""
     while True:
