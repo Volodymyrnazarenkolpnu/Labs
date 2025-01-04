@@ -106,17 +106,26 @@ class Garden():
         self.__sizex = sizex
         self.__sizey = sizey
         self.__last_tick = last_tick
-    def __str__(self):
+    def show_garden(self, slot_x, slot_y):
+        """shows garden"""
         text = """ """
+        current_y = 0
+        current_x = 0
         for g in self.__field:
-            line = "|"
+            line = ""
             for plt in g:
                 if plt != "":
-                    part = plt.__str__()
+                    part = str(plt)
                 else:
                     part = "Empty"
-                line += f"{part}|"
+                if slot_y == current_y and slot_x == current_x:
+                    line += f"|{part}|"
+                else:
+                    line += f" {part} "
+                current_x += 1
             text += line + "\n"
+            current_y += 1
+            current_x = 0
         return text
     def get_field(self):
         """
