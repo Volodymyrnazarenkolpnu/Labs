@@ -2,6 +2,7 @@
 main logic script
 """
 import datetime
+import time
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
 from services import GameService, PlayerService, PlantPropsService
@@ -13,7 +14,12 @@ current_check_users = []
 # bluecorn = Mutations([0],[2], 10, 0)
 # clockberry = Mutations([0],[2], 5, 1)
         #    GardenService.tick(player_id, player.get_garden_obj())
-        #GameService.check(player_id, player)
+        #GameService.check(player_id, player)      
+def sleep():
+    """
+    Delay between messages
+    """
+    time.sleep(1)
 async def start(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /start is issued."""
     user = update.effective_user
@@ -62,6 +68,7 @@ async def check(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     garden = GameService.check(user_id, player)
     txt = garden.show_garden(0,0)
     await update.message.reply_text(txt,  reply_markup= reply_markup)
+    sleep()
 
 async def check_buttons(update : Update, _context: ContextTypes.DEFAULT_TYPE):
     """Process /check button inpust"""
@@ -135,7 +142,7 @@ async def check_buttons(update : Update, _context: ContextTypes.DEFAULT_TYPE):
     reply_markup = InlineKeyboardMarkup(keyboard)
 
     await querry.edit_message_text(text=txt, reply_markup=reply_markup)
-
+    sleep()
 # |empty|empty
 #  empty empty
 
@@ -173,6 +180,7 @@ async def plant(update : Update, context: ContextTypes.DEFAULT_TYPE):
             await update.message.reply_text("You don't yet have that plant")
         elif status == "not_int":
             await update.message.reply_text("Both slot number and plant id must be integer")
+    sleep()
 
 async def collect(update : Update, context: ContextTypes.DEFAULT_TYPE):
     """collect/uproot a plant in the garden of the user"""
@@ -196,7 +204,7 @@ async def collect(update : Update, context: ContextTypes.DEFAULT_TYPE):
             else:
                 await update.message.reply_text(f"""{status[0]} in slot {context.args[0]}
                  collected successfully!""")
-
+    sleep()
 
 # GameService.plant(player_id, 1, 1)
 # GameService.plant(player_id, 4, 2)
