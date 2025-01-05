@@ -69,6 +69,7 @@ async def check_buttons(update : Update, _context: ContextTypes.DEFAULT_TYPE):
     querry_data = querry.data.split("_")
     querry_data[1] = int(querry_data[1])
     querry_user = querry.from_user.id
+    print(current_check_users)
     print(querry_data[1])
     print(querry_user)
     current_userlist = list(filter(lambda user: querry_data[1] == user.player_id, current_check_users))
@@ -81,23 +82,39 @@ async def check_buttons(update : Update, _context: ContextTypes.DEFAULT_TYPE):
         await querry.answer("Not yours!")
         return
     if querry_data[0] == "Up":
-        cursor_y -= (1 if cursor_y > 0 else 0)
-        index = current_check_users.index(current_userlist[0])
-        current_check_users[index].cursor_y = cursor_y
+        if cursor_y > 0:
+            cursor_y -= 1
+            index = current_check_users.index(current_userlist[0])
+            current_check_users[index].cursor_y = cursor_y
+        else:
+            await querry.answer("Error")
+            return
     elif querry_data[0] == "Down":
         sizey = garden.get_sizey()
-        cursor_y += (1 if cursor_y < sizey - 1 else 0)
-        index = current_check_users.index(current_userlist[0])
-        current_check_users[index].cursor_y = cursor_y
+        if cursor_y < sizey - 1:
+            cursor_y += 1
+            index = current_check_users.index(current_userlist[0])
+            current_check_users[index].cursor_y = cursor_y
+        else:
+            await querry.answer("Error")
+            return
     elif querry_data[0] == "Left":
-        cursor_x -= (1 if cursor_x > 0 else 0)
-        index = current_check_users.index(current_userlist[0])
-        current_check_users[index].cursor_x = cursor_x
+        if cursor_x > 0:
+            cursor_x -= 1
+            index = current_check_users.index(current_userlist[0])
+            current_check_users[index].cursor_x = cursor_x
+        else:
+            await querry.answer("Error")
+            return
     elif querry_data[0] == "Right":
         sizex = garden.get_sizex()
-        cursor_x += (1 if cursor_x < sizex - 1 else 0)
-        index = current_check_users.index(current_userlist[0])
-        current_check_users[index].cursor_x = cursor_x
+        if cursor_x < sizex - 1:
+            cursor_x += 1
+            index = current_check_users.index(current_userlist[0])
+            current_check_users[index].cursor_x = cursor_x
+        else:
+            await querry.answer("Error")
+            return
     elif querry_data[0] == "Plant":
         pass
     elif querry_data[0] == "Uproot":
