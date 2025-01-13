@@ -1,5 +1,6 @@
 ''''Models'''
 #from services import garden_update_field, get_garden_from_db, tick
+import math
 
 class Properties():
     """
@@ -106,9 +107,16 @@ class Garden():
         self.__sizex = sizex
         self.__sizey = sizey
         self.__last_tick = last_tick
-    def show_garden(self, slot_x, slot_y):
+    def show_garden(self, slot):
         """shows garden"""
         text = """ """
+        garden_sizex = self.get_sizex()
+        garden_sizey = self.get_sizey()
+        y = math.ceil(slot / garden_sizey) - 1
+        _x = slot % garden_sizex - 1
+        if _x == -1:
+            _x += garden_sizex
+        x = _x
         current_y = 0
         current_x = 0
         for g in self.__field:
@@ -118,7 +126,7 @@ class Garden():
                     part = str(plt)
                 else:
                     part = "Empty"
-                if slot_y == current_y and slot_x == current_x:
+                if y == current_y and x == current_x:
                     line += f"|{part}|"
                 else:
                     line += f" {part} "

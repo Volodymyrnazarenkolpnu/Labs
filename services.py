@@ -222,7 +222,7 @@ class GameService:
             return "occupied"
         
     @staticmethod
-    def check(user_id, player: Player):
+    def check(user_id, player: Player ):
         """
         Check garden status as player
         """

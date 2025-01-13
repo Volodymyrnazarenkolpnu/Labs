@@ -3,8 +3,9 @@ main logic script
 """
 import datetime
 import time
+import PIL
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
-from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler
+from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, InlineQueryHandler
 from services import GameService, PlayerService, PlantPropsService
 KEY = "7548885562:AAGyYJ87KaiZY7LAbm_uu9_u7NFLqnqRmXw"
 current_check_users = []
@@ -48,7 +49,7 @@ class CurrentCheckUser:
 
 async def check(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /check is issued."""
-
+    mode = _context.args 
     user = update.effective_user
     user_id = user.id
     user_name = user.full_name
@@ -59,90 +60,18 @@ async def check(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     current_userlist = list(filter(lambda user: user_id == user.player_id, current_check_users))
     if len(current_userlist) < 1:
         current_check_users.append(user)
-    keyboard = [[InlineKeyboardButton("Plant", callback_data=f"Plant_{user_id}"),InlineKeyboardButton("Up", callback_data=f"Up_{user_id}"),InlineKeyboardButton("Upoot", callback_data=f"Uproot_{user_id}")],
-    [InlineKeyboardButton("Left", callback_data=f"Left_{user_id}"),InlineKeyboardButton("Down", callback_data=f"Down_{user_id}"),InlineKeyboardButton("Right", callback_data=f"Right_{user_id}")]]
+    # keyboard = [[InlineKeyboardButton("Plant", callback_data=f"Plant_{user_id}"),InlineKeyboardButton("Up", callback_data=f"Up_{user_id}"),InlineKeyboardButton("Upoot", callback_data=f"Uproot_{user_id}")],
+    # [InlineKeyboardButton("Left", callback_data=f"Left_{user_id}"),InlineKeyboardButton("Down", callback_data=f"Down_{user_id}"),InlineKeyboardButton("Right", callback_data=f"Right_{user_id}")]]
 
-    reply_markup = InlineKeyboardMarkup(keyboard)
+    # reply_markup = InlineKeyboardMarkup(keyboard)
 
     player = PlayerService.get_player_or_create_db(user_id, user_name)[0]
     garden = GameService.check(user_id, player)
-    txt = garden.show_garden(0,0)
-    await update.message.reply_text(txt,  reply_markup= reply_markup)
+    txt = garden.show_garden(1)
+    #reply_markup = reply_markup
+    await update.message.reply_text(txt)
     sleep()
 
-async def check_buttons(update : Update, _context: ContextTypes.DEFAULT_TYPE):
-    """Process /check button inpust"""
-    querry = update.callback_query
-    querry_data = querry.data.split("_")
-    querry_data[1] = int(querry_data[1])
-    querry_user = querry.from_user.id
-    print(current_check_users)
-    print(querry_data[1])
-    print(querry_user)
-    current_userlist = list(filter(lambda user: querry_data[1] == user.player_id, current_check_users))
-    cursor_x = current_userlist[0].cursor_x
-    cursor_y = current_userlist[0].cursor_y
-    user_id = querry_data[1]
-    player = PlayerService.get_player_or_create_db(user_id, user_id)[0]
-    garden = GameService.check(user_id, player)
-    if querry_user != querry_data[1]:
-        await querry.answer("Not yours!")
-        return
-    if querry_data[0] == "Up":
-        if cursor_y > 0:
-            cursor_y -= 1
-            index = current_check_users.index(current_userlist[0])
-            current_check_users[index].cursor_y = cursor_y
-        else:
-            await querry.answer("Error")
-            return
-    elif querry_data[0] == "Down":
-        sizey = garden.get_sizey()
-        if cursor_y < sizey - 1:
-            cursor_y += 1
-            index = current_check_users.index(current_userlist[0])
-            current_check_users[index].cursor_y = cursor_y
-        else:
-            await querry.answer("Error")
-            return
-    elif querry_data[0] == "Left":
-        if cursor_x > 0:
-            cursor_x -= 1
-            index = current_check_users.index(current_userlist[0])
-            current_check_users[index].cursor_x = cursor_x
-        else:
-            await querry.answer("Error")
-            return
-    elif querry_data[0] == "Right":
-        sizex = garden.get_sizex()
-        if cursor_x < sizex - 1:
-            cursor_x += 1
-            index = current_check_users.index(current_userlist[0])
-            current_check_users[index].cursor_x = cursor_x
-        else:
-            await querry.answer("Error")
-            return
-    elif querry_data[0] == "Plant":
-        pass
-    elif querry_data[0] == "Uproot":
-        pass
-    txt = garden.show_garden(cursor_x, cursor_y)
-    keyboard = [
-        [
-            InlineKeyboardButton("Plant", callback_data=f"Plant_{user_id}"),
-            InlineKeyboardButton("Up", callback_data=f"Up_{user_id}"),
-            InlineKeyboardButton("Upoot", callback_data=f"Uproot_{user_id}")
-        ],
-        [
-            InlineKeyboardButton("Left", callback_data=f"Left_{user_id}"),
-            InlineKeyboardButton("Down", callback_data=f"Down_{user_id}"),
-            InlineKeyboardButton("Right", callback_data=f"Right_{user_id}")
-        ]
-    ]
-    reply_markup = InlineKeyboardMarkup(keyboard)
-
-    await querry.edit_message_text(text=txt, reply_markup=reply_markup)
-    sleep()
 # |empty|empty
 #  empty empty
 
@@ -215,8 +144,7 @@ application.add_handler(CommandHandler("check", check))
 application.add_handler(CommandHandler("quit_game", quit_game))
 application.add_handler(CommandHandler("plant", plant))
 application.add_handler(CommandHandler("collect", collect))
-application.add_handler(CallbackQueryHandler(check_buttons))
-application.run_polling(allowed_updates=Update.MESSAGE)
+application.run_polling(allowed_updates=Update.ALL_TYPES)
 
 # print(player.get_garden_obj())
 # GameService.plant(player_id, 1, 1)
