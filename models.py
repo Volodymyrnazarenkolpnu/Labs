@@ -107,34 +107,21 @@ class Garden():
         self.__sizex = sizex
         self.__sizey = sizey
         self.__last_tick = last_tick
-    def show_garden(self, slot):
+    def show_garden(self):
         """shows garden"""
-        text = """ """
-        garden_sizex = self.get_sizex()
-        garden_sizey = self.get_sizey()
-        y = math.ceil(slot / garden_sizey) - 1
-        _x = slot % garden_sizex - 1
-        if _x == -1:
-            _x += garden_sizex
-        x = _x
         current_y = 0
         current_x = 0
+        plant_list = []
         for g in self.__field:
-            line = ""
             for plt in g:
                 if plt != "":
-                    part = str(plt)
+                    plant_list.append(plt.data())
                 else:
-                    part = "Empty"
-                if y == current_y and x == current_x:
-                    line += f"|{part}|"
-                else:
-                    line += f" {part} "
+                    plant_list.append("Empty")
                 current_x += 1
-            text += line + "\n"
             current_y += 1
             current_x = 0
-        return text
+        return plant_list
     def get_field(self):
         """
         Field matrix getter
@@ -184,8 +171,9 @@ class Plant():
         # self.__maturation_age = plants[species].maturation_age
         # self.__idnum = species
 
-    def __str__(self):
-        return f"{self.__plant_id} {self.__name}, {self.age}, {self.status}"
+    def data(self):
+        """returns data about itself"""
+        return (self.__plant_id, self.__name, self.age, self.status)
 
     def aging(self):
         """

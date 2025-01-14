@@ -4,7 +4,9 @@ Services of project. We used it when we need to interact with db, or do massive 
 import datetime
 import json
 import math
+import io
 from random import randint
+from PIL import Image, ImageDraw
 from db import (create_new_plant, add_points_to_player, remove_garden_by_id,
 remove_player_by_id, create_player_and_their_garden,
 delete_plant_by_id, get_garden_by_player_id, get_plant_by_id,
@@ -234,6 +236,20 @@ class GameService:
             for _k in range(_amount):
                 GardenService.tick(user_id, garden)
         return garden
+    
+    @staticmethod
+    def image_gen(x, y):
+        """generates a base image of a garden"""
+        check_image = Image.new('RGB', ((40 + x * 120),(40 + y * 120)),(255,255,255))
+        draw_check_image = ImageDraw.Draw(check_image)
+        for slot in range(x):
+            draw_check_image.line(((20 + slot * 120),(20),(20 + slot * 120),(20 + y * 120)), fill =(100, 10, 10), width=1)
+        for slot in range(y):
+            draw_check_image.line(((20),(20 + slot * 120),(20 + x * 120),(20  + slot * 120)), fill =(100, 10, 10), width=1)
+    
+        draw_check_image.rectangle((0, 0, x * 120 + 40, y * 120 + 40),width=20, outline=(10,100,10))
+        
+        return (draw_check_image, check_image)
 
     @staticmethod
     def uproot(player_id, slot):

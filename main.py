@@ -3,7 +3,8 @@ main logic script
 """
 import datetime
 import time
-import PIL
+import io
+from PIL import Image, ImageDraw, ImageFont
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, InlineQueryHandler
 from services import GameService, PlayerService, PlantPropsService
@@ -39,37 +40,37 @@ async def start(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
             rf"Hi {user.mention_html()}!You already have an account!"
         )
 
-class CurrentCheckUser:
-    """player object for when few instances of /check is run"""
-    def __init__(self, player_id, cursor_x, cursor_y, last_action_time):
-        self.player_id = player_id
-        self.cursor_x = cursor_x
-        self.cursor_y = cursor_y
-        self.last_action_time = last_action_time
 
 async def check(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
     """Send a message when the command /check is issued."""
-    mode = _context.args 
+    mode = _context.args
     user = update.effective_user
-    user_id = user.id
     user_name = user.full_name
-    cursor_x = 0
-    cursor_y = 0
-    last_action_time = datetime.datetime.now()
-    user = CurrentCheckUser(user_id, cursor_x, cursor_y, last_action_time)
-    current_userlist = list(filter(lambda user: user_id == user.player_id, current_check_users))
-    if len(current_userlist) < 1:
-        current_check_users.append(user)
-    # keyboard = [[InlineKeyboardButton("Plant", callback_data=f"Plant_{user_id}"),InlineKeyboardButton("Up", callback_data=f"Up_{user_id}"),InlineKeyboardButton("Upoot", callback_data=f"Uproot_{user_id}")],
-    # [InlineKeyboardButton("Left", callback_data=f"Left_{user_id}"),InlineKeyboardButton("Down", callback_data=f"Down_{user_id}"),InlineKeyboardButton("Right", callback_data=f"Right_{user_id}")]]
-
-    # reply_markup = InlineKeyboardMarkup(keyboard)
-
+    user_id = user.id
     player = PlayerService.get_player_or_create_db(user_id, user_name)[0]
     garden = GameService.check(user_id, player)
-    txt = garden.show_garden(1)
-    #reply_markup = reply_markup
-    await update.message.reply_text(txt)
+    garden_x = garden.get_sizex()
+    garden_y = garden.get_sizey()
+    check_image = GameService.image_gen(garden_x, garden_y)
+    draw_check_image = check_image[0]
+    if len(mode) > 0:
+        if mode[0] == "info":
+            garden_data = garden.show_garden()
+            _index = 0
+            for row in range(garden_x):
+                for column in range(garden_y):
+                    font = ImageFont.truetype("ArialMT.ttf", size=10)
+                    if garden_data[_index] != "Empty":
+                        draw_check_image.text((20 + 120 * (row), 20 + 120 * (column + 1) - 70), str(garden_data[_index][1]), font=font, fill=(0,0,0))
+                    else:
+                        draw_check_image.text((20 + 120 * (row), 20 + 120 * (column + 1) - 70), "Empty", font=font, fill=(0,0,0))
+
+    check_image_bio = io.BytesIO()
+    check_image_bio.name = "check_image.jpg"
+    check_image[1].save(check_image_bio, "JPEG")
+    check_image_bio.seek(0)
+
+    await update.message.reply_photo(photo=check_image_bio)
     sleep()
 
 # |empty|empty
