@@ -8,6 +8,7 @@ from PIL import Image, ImageDraw, ImageFont
 from telegram import Update, InlineKeyboardButton, InlineKeyboardMarkup
 from telegram.ext import Application, CommandHandler, ContextTypes, CallbackQueryHandler, InlineQueryHandler
 from services import GameService, PlayerService, PlantPropsService
+from setting import BORDER_WIDTH, CELL_WIDTH
 KEY = "7548885562:AAGyYJ87KaiZY7LAbm_uu9_u7NFLqnqRmXw"
 current_check_users = []
 
@@ -59,11 +60,13 @@ async def check(update: Update, _context: ContextTypes.DEFAULT_TYPE) -> None:
             _index = 0
             for row in range(garden_x):
                 for column in range(garden_y):
-                    font = ImageFont.truetype("ArialMT.ttf", size=10)
+                    # font = ImageFont.truetype("ArialMT.ttf", size=10)
+                    font = ImageFont.truetype("arial.ttf", size=10)
                     if garden_data[_index] != "Empty":
-                        draw_check_image.text((20 + 120 * (row), 20 + 120 * (column + 1) - 70), str(garden_data[_index][1]), font=font, fill=(0,0,0))
+                        draw_check_image.text((BORDER_WIDTH + CELL_WIDTH * (row)+CELL_WIDTH/2, BORDER_WIDTH + CELL_WIDTH * (column) + CELL_WIDTH/2), str(garden_data[_index][1]), font=font, fill=(0,0,0), align="center", anchor="mm")
                     else:
-                        draw_check_image.text((20 + 120 * (row), 20 + 120 * (column + 1) - 70), "Empty", font=font, fill=(0,0,0))
+                        draw_check_image.text((BORDER_WIDTH + CELL_WIDTH * (row)+CELL_WIDTH/2, BORDER_WIDTH + CELL_WIDTH * (column) + CELL_WIDTH/2), "Empty", font=font, fill=(0,0,0), anchor="mm")
+                    _index+=1
 
     check_image_bio = io.BytesIO()
     check_image_bio.name = "check_image.jpg"

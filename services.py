@@ -13,6 +13,7 @@ delete_plant_by_id, get_garden_by_player_id, get_plant_by_id,
 get_plant_props_by_id, get_player_by_id, get_all_mutations,
 update_field, update_garden_last_tick, update_plant, update_player_name)
 from models import Garden, Mutations, Plant, Player, Properties
+from setting import BORDER_WIDTH, CELL_WIDTH
 
 class PlayerService:
     '''Player service'''
@@ -240,14 +241,14 @@ class GameService:
     @staticmethod
     def image_gen(x, y):
         """generates a base image of a garden"""
-        check_image = Image.new('RGB', ((40 + x * 120),(40 + y * 120)),(255,255,255))
+        check_image = Image.new('RGB', ((BORDER_WIDTH*2 + x * CELL_WIDTH),(BORDER_WIDTH*2 + y * CELL_WIDTH)),(255,255,255))
         draw_check_image = ImageDraw.Draw(check_image)
         for slot in range(x):
-            draw_check_image.line(((20 + slot * 120),(20),(20 + slot * 120),(20 + y * 120)), fill =(100, 10, 10), width=1)
+            draw_check_image.line(((BORDER_WIDTH + slot * CELL_WIDTH),(BORDER_WIDTH),(BORDER_WIDTH + slot * CELL_WIDTH),(BORDER_WIDTH + y * CELL_WIDTH)), fill =(100, 10, 10), width=1)
         for slot in range(y):
-            draw_check_image.line(((20),(20 + slot * 120),(20 + x * 120),(20  + slot * 120)), fill =(100, 10, 10), width=1)
+            draw_check_image.line(((BORDER_WIDTH),(BORDER_WIDTH + slot * CELL_WIDTH),(BORDER_WIDTH + x * CELL_WIDTH),(BORDER_WIDTH  + slot * CELL_WIDTH)), fill =(100, 10, 10), width=1)
     
-        draw_check_image.rectangle((0, 0, x * 120 + 40, y * 120 + 40),width=20, outline=(10,100,10))
+        draw_check_image.rectangle((0, 0, x * CELL_WIDTH + BORDER_WIDTH*2, y * CELL_WIDTH + BORDER_WIDTH*2),width=BORDER_WIDTH, outline=(10,100,10))
         
         return (draw_check_image, check_image)
 
