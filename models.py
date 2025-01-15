@@ -1,6 +1,5 @@
 ''''Models'''
-#from services import garden_update_field, get_garden_from_db, tick
-import math
+#from services import garden_update_field, get_garden_from_db, tick         
 
 class Properties():
     """
@@ -173,7 +172,7 @@ class Plant():
 
     def data(self):
         """returns data about itself"""
-        return (self.__plant_id, self.__name, self.age, self.status)
+        return (self.__plant_id, self.__name, self.age, self.status, self.__prop_id)
 
     def aging(self):
         """

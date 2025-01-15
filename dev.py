@@ -11,5 +11,5 @@ def devloop():
             player_id = input()
             player = PlayerService.get_player_or_create_db(player_id, "")[0]
             garden = player.get_garden_obj()
-            GardenService.tick(player_id, garden)
+            print(GardenService.tick(player_id, garden))
 devloop()

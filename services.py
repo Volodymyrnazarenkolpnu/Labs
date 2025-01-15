@@ -11,28 +11,36 @@ from db import (create_new_plant, add_points_to_player, remove_garden_by_id,
 remove_player_by_id, create_player_and_their_garden,
 delete_plant_by_id, get_garden_by_player_id, get_plant_by_id,
 get_plant_props_by_id, get_player_by_id, get_all_mutations,
-update_field, update_garden_last_tick, update_plant, update_player_name)
+update_field, update_garden_last_tick, update_plant,
+update_unlocked_plants)
 from models import Garden, Mutations, Plant, Player, Properties
 from setting import BORDER_WIDTH, CELL_WIDTH
 
 class PlayerService:
     '''Player service'''
     @staticmethod
-    def get_player_or_create_db(player_id, name):
+    def get_player(player_id):
         ''''Get or create new player from db. Also it updates name if user exists'''
         player = get_player_by_id(player_id)
         exist_status = True
         if player is None:
-            create_player_and_their_garden(player_id, name, 2, 2)
-            player = get_player_by_id(player_id)
             exist_status = False
         name_from_player = player["username"]
         points = player["points"]
         unlocked_plants = json.loads(player["unlocked_plants"])
         garden = GardenService.get_garden_from_db(player_id)
-        if name is not name_from_player:
-            update_player_name(player_id, name)
         return [Player(player_id, name_from_player, points, unlocked_plants, garden), exist_status]
+    @staticmethod
+    def create_player(player_id, name, group):
+        """creates a player"""
+        player = get_player_by_id(player_id)
+        if player is None:
+            create_player_and_their_garden(player_id, group, name, 2, 2)
+            exit_status = True
+        else:
+            exit_status = False
+        return exit_status
+
     @staticmethod
     def remove_player_or_display_error(player_id):
         """removes a player if it exists"""
@@ -43,6 +51,21 @@ class PlayerService:
             remove_player_by_id(player_id)
             remove_garden_by_id(player_id)
             return True
+    @staticmethod
+    def check_or_unlock_plant(player_id, prop_id):
+        """updates unlocked plants list if necessary"""
+        player = get_player_by_id(player_id)
+        unlocked_plants = json.loads(player["unlocked_plants"])
+        if not prop_id in unlocked_plants:
+            update_unlocked_plants(player_id, prop_id)
+            _prop = get_plant_props_by_id(prop_id)
+            return f"Unlocked {_prop["name"]} seed!"
+        else:
+            return "no"
+    @staticmethod
+    def get_group_players(group):
+        pass
+
 
 class GardenService:
     '''Garden service'''
@@ -112,7 +135,7 @@ class GardenService:
                                 newslot = garden_field[ny][nx]
                                 if newslot != "" and newslot.get_status() == "Mature":
                                     _plant_idnum = newslot.get_prop_id()
-                                    if not _plant_idnum is nearby_plants:
+                                    if not _plant_idnum in nearby_plants:
                                         nearby_plants.append(_plant_idnum)
                                         nearby_plants_amounts.append(1)
                                     else:
@@ -191,11 +214,11 @@ class PlantPropsService:
 class GameService:
     '''Game Service'''
     @staticmethod
-    def plant(player_id, slot, prop_id, name):
+    def plant(player_id, slot, prop_id):
         """
         plants something in the garden
         """
-        player = PlayerService.get_player_or_create_db(player_id, name)[0]
+        player = PlayerService.get_player(player_id)[0]
         player_plantlist = player.get_unlocked_plants()
         garden = GardenService.get_garden_from_db(player_id)
         garden_field = garden.get_field()
@@ -213,7 +236,7 @@ class GameService:
         x = _x
         if x < 0 or x >= garden_sizex or  y < 0 or y >= garden_sizey:
             return "wrong_slot"
-        if not player_plantlist.__contains__(prop_id):
+        if not prop_id in player_plantlist:
             return "not_available"
         if garden_field[y][x] == "":
             new_plant = PlantService.create_plant(prop_id)
@@ -283,4 +306,4 @@ class GameService:
             delete_plant_by_id(plant_id)
             garden_field[y][x] = ""
             update_field(player_id, garden_field, garden_sizex, garden_sizey)
-            return (plant_name, plant_status, points)
+            return (plant_name, plant_status, points, prop_id)

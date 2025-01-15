@@ -17,7 +17,8 @@ def init():
     id TEXT PRIMARY KEY,
     username TEXT NOT NULL,
     points INTEGER INT,
-    unlocked_plants TEXT
+    unlocked_plants TEXT,
+    player_group INTEGER INT
     )
     ''')
     cursor.execute('''
@@ -57,10 +58,18 @@ def init():
     FOREIGN KEY(outcomeplant_id) REFERENCES PlantsProps(id)
     )
     ''')
-    cursor.execute('INSERT INTO PlantsProps (name, decay_age, maturation_age) VALUES ("Blue Corn", 6, 3)')
-    cursor.execute('INSERT INTO PlantsProps (name, decay_age, maturation_age) VALUES ("Clockberry", 10, 7)')
+    cursor.execute("""
+    CREATE TABLE IF NOT EXISTS groups (
+    id INTEGER INTEGER INT,
+    group_players TEXT NOT NULL
+    )
+    """)
+    cursor.execute('INSERT INTO PlantsProps (name, decay_age, maturation_age, points) VALUES ("Blue Corn", 6, 3, 5)')
+    cursor.execute('INSERT INTO PlantsProps (name, decay_age, maturation_age, points) VALUES ("Clockberry", 10, 7, 10)')
+    cursor.execute('INSERT INTO PlantsProps (name, decay_age, maturation_age, points) VALUES ("Graphite Tree", 20, 6, 20)')
     cursor.execute('INSERT INTO Mutations (plantlist, plantquantity, chance, outcomeplant_id) VALUES (?, ?, 10, 1)', (json.dumps([1]),json.dumps([2])))
     cursor.execute('INSERT INTO Mutations (plantlist, plantquantity, chance, outcomeplant_id) VALUES (?, ?, 5, 2)', (json.dumps([1]),json.dumps([2])))
+    cursor.execute('INSERT INTO Mutations (plantlist, plantquantity, chance, outcomeplant_id) VALUES (?, ?, 5, 3)', (json.dumps([1,2]),json.dumps([1,1])))
 
     connection.commit()
     cursor.close()
@@ -73,14 +82,14 @@ if not os.path.exists(DB_FILE):
 connection = sqlite3.connect(DB_FILE)
 
 #region PLAYERS
-def create_player_and_their_garden(user_id, username, sizex = 2, sizey = 2):
+def create_player_and_their_garden(user_id, username, group, sizex = 2, sizey = 2):
     '''Create player and garden for them'''
     field = numpy.full((sizex, sizey), "")
     cursor = connection.cursor()
     cursor.execute('SELECT id FROM PlantsProps')
-    first_plant = cursor.fetchone()    
-    cursor.execute('INSERT INTO Players (id, username, points, unlocked_plants) VALUES (?, ?, ?, ?)'
-                   , (user_id, username, 0, json.dumps([first_plant[0]])))
+    first_plant = cursor.fetchone()
+    cursor.execute('INSERT INTO Players (id, username, points, unlocked_plants, player_group) VALUES (?, ?, ?, ?, ?)'
+                   , (user_id, username, 0, json.dumps([first_plant[0]]), group))
     cursor.execute('INSERT INTO Gardens (id, field, sizex, sizey, last_tick) VALUES (?, ?, ?, ?, ?)'
                    , (user_id, json.dumps(field.tolist()), sizex, sizey, f"{datetime.datetime.now()}"))
     connection.commit()
@@ -91,6 +100,12 @@ def update_player_name(player_id, name):
     cursor.execute('UPDATE Players SET username = ? WHERE id = ?', (name, player_id))
     connection.commit()
     cursor.close()
+def add_player_to_group():
+    
+def get_group_players(group):
+    cursor = connection.cursor()
+    cursor.execute("SELECT ")
+
 def get_player_by_id(user_id):
     '''Need to find a player by player_id'''
     cursor = connection.cursor()
@@ -123,6 +138,15 @@ def add_points_to_player(user_id, new_points):
     cursor.execute("UPDATE Players SET points = ? WHERE id = ?", (points, user_id))
     connection.commit()
     cursor.close()
+def update_unlocked_plants(user_id, prop_id):
+    """updates player unlocked plants"""
+    cursor = connection.cursor()
+    cursor.execute("SELECT unlocked_plants FROM players WHERE id = ?", (user_id,))
+    unlocked_plants = cursor.fetchone()[0]
+    unlocked_plants = json.loads(unlocked_plants)
+    unlocked_plants.append(prop_id)
+    unlocked_plants = json.dumps(unlocked_plants)
+    cursor.execute("UPDATE Players SET unlocked_plants = ? WHERE id = ?", (unlocked_plants, user_id))
 #endregion
 
 #region GARDEN
