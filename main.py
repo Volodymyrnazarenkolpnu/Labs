@@ -9,7 +9,7 @@ from telegram import Update
 from telegram.ext import Application, CommandHandler, ContextTypes
 from services import GameService, PlayerService, PlantPropsService
 from setting import BORDER_WIDTH, CELL_WIDTH
-KEY = "7548885562:AAGyYJ87KaiZY7LAbm_uu9_u7NFLqnqRmXw"
+KEY = ""
 current_check_users = []
 
 # plants =[]
